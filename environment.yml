@@ -1,0 +1,8 @@
+name: synthrl-stage1
+channels:
+  - defaults
+dependencies:
+  - python=3.9
+  - pip=24.0
+  - pip:
+      - -r requirements.txt
