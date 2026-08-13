@@ -5,19 +5,34 @@ SynthRL on pre-rendered Dexed spectrograms using parameter loss.
 
 ## Requirements
 
-- Linux x86-64
+- Linux x86-64/iOS
 - Conda (Miniconda or Anaconda)
-- An NVIDIA GPU with a driver compatible with CUDA 11.7
-- Enough disk space for the extracted bundle and Conda environment
+- An NVIDIA GPU with a driver compatible with CUDA 11.7, pretty sure that latest CUDA 13.3 is backcompatible with 11.7 though
+- Enough disk space for the extracted bundle and Conda environment ~4Gb
 
 ## Setup and run
 
-From this directory:
+### Dataset layout
+
+Expects:
+
+```text
+datasets/dexed/
+├── params.pt
+└── spectrogram/
+```
+so just copy the contents of the unzipped file data/dataset into skripsie-training/datasets/dexed.
+
+### Then
+From repo root:
 
 ```bash
 ./setup.sh
 ./run.sh
 ```
+This should work, lmk if something fails.
+
+
 
 The first command creates the `synthrl-stage1` Conda environment. The second
 starts the configured 200-epoch training run. Outputs and checkpoints are saved
@@ -46,15 +61,7 @@ Checkpoints are written every five epochs. To resume at epoch 50, ensure
 
 Keep the `run/` folder when moving between machines or notebook sessions.
 
-## Dataset layout
 
-Stage 1 expects:
-
-```text
-datasets/dexed/
-├── params.pt
-└── spectrogram/
-```
 
 Parameter metadata is stored in `synth/dexed_presets.sqlite`.
 
