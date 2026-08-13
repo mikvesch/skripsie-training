@@ -1,6 +1,6 @@
 # SynthRL Stage 1 training bundle
 
-This repo is a minimal, self-contained Stage 1 training bundle. It trains
+This repo is a minimal, self-contained training bundle that trains
 SynthRL on pre-rendered Dexed spectrograms using parameter loss.
 
 ## Requirements
