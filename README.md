@@ -61,6 +61,22 @@ Checkpoints are written every five epochs. To resume at epoch 50, ensure
 
 Keep the `run/` folder when moving between machines or notebook sessions.
 
+## Transfer the trained model
+
+After the default training run finishes, push the final checkpoint with Git
+LFS (install Git LFS first if it is not already available):
+
+```bash
+git lfs install
+git lfs track "*.tar"
+git add .gitattributes run/stage1/seed2/checkpoints/00199.tar
+git commit -m "Add trained Stage 1 model"
+git push
+```
+
+The recipient can then run `git pull` with Git LFS installed. The trained model
+will be at `run/stage1/seed2/checkpoints/00199.tar`.
+
 
 
 Parameter metadata is stored in `synth/dexed_presets.sqlite`.
