@@ -15,12 +15,13 @@ def get_dataset(dataset_cfg):
     return full_dataset
 
 
-def get_split_dataloaders(train_cfg, full_dataset):
+def get_split_dataloaders(train_cfg, full_dataset, random_seed=0):
     subset_samplers = build_subset_samplers(
         full_dataset,
         k_fold=train_cfg.current_k_fold,
         k_folds_count=train_cfg.k_folds,
-        test_holdout_proportion=train_cfg.test_holdout_proportion
+        test_holdout_proportion=train_cfg.test_holdout_proportion,
+        random_seed=random_seed,
     )
     dataloaders = dict()
     sub_datasets_lengths = dict()

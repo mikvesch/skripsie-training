@@ -259,10 +259,7 @@ class DexedDataset(abstractbasedataset.PresetDataset):
         return preset_params
     
     def get_data_from_file(self, preset_UID, midi_pitch, midi_velocity):
-        # Stage 1 consumes only sample[1] (the pre-rendered spectrogram). Return
-        # an empty tensor in the waveform slot so default batch collation still
-        # works without shipping or reading redundant WAV files.
-        waveform = torch.empty(0)
+        waveform = self.get_wav_file(preset_UID, midi_pitch, midi_velocity)
         spectrogram = self.get_spec_file(preset_UID, midi_pitch, midi_velocity)
         return waveform, spectrogram
     

@@ -1,0 +1,61 @@
+model:
+  d_model: 512
+  in_channels: 1
+  n_queries: 144
+  transformer_kwargs:
+    nhead: 8
+    num_encoder_layers: 6
+    num_decoder_layers: 6
+    dim_feedforward: 1024
+    dropout: 0.1
+    activation: gelu
+    normalize_before: true
+dataset:
+  name: dexed
+  note_duration:
+  - 3.0
+  - 1.0
+  n_fft: 1024
+  fft_hop: 256
+  n_mel_bins: 128
+  midi_notes:
+  - - 60
+    - 85
+  algos: null
+  operators:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  vst_params_learned_as_categorical: all<=34
+  dataset_dir: datasets/dexed
+  num_param_bins: 25
+  sample_rate: 22050
+train:
+  current_k_fold: 0
+  k_folds: 5
+  test_holdout_proportion: 0.2
+  minibatch_size: 32
+  num_workers: 2
+  start_epoch: 0
+  end_epoch: 200
+  save_period: 5
+  eval_period: 10
+loss:
+  cat_softmax_t: 0.2
+  label_smoothing: true
+optim:
+  initial_lr: 0.0002
+  weight_decay: 0.0001
+  adam_betas:
+  - 0.9
+  - 0.999
+scheduler:
+  warmup_epochs: 10
+  warmup_start_factor: 0.2
+logs_root_dir: run
+run_name: stage1/seed2
+verbosity: 1
+main_cuda_device_idx: 0

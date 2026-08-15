@@ -1,4 +1,6 @@
 import hydra
+import random
+import numpy as np
 import torch
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
@@ -15,9 +17,16 @@ from utils.hparams import LinearDynamicParam
 
 
 def train(cfg: DictConfig):
+    # Seed every RNG used by model initialization, sampling, and data-loader workers.
+    random.seed(cfg.seed)
+    np.random.seed(cfg.seed)
+    torch.manual_seed(cfg.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(cfg.seed)
+
     # Prepare dataloader and synthesizer
     dataset = get_dataset(cfg.dataset)
-    dataloader = get_split_dataloaders(cfg.train, dataset)
+    dataloader = get_split_dataloaders(cfg.train, dataset, random_seed=cfg.seed)
     logger = RunLogger(cfg)
     preset_idx_helper = dataset.preset_indexes_helper
 

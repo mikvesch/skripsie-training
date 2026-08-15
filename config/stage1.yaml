@@ -29,5 +29,6 @@ scheduler:
 
 logs_root_dir: run
 run_name: stage1/seed2
+seed: 2
 verbosity: 1
 main_cuda_device_idx: 0
