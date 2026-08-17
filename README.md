@@ -1,93 +1,133 @@
-# SynthRL Stage 1 training bundle
+# SynthRL three-stage training bundle
 
-This repo is a minimal, self-contained training bundle that trains
-SynthRL on pre-rendered Dexed spectrograms using parameter loss.
+This is a self-contained training bundle for the three-stage SynthRL pipeline.
+The current priority is to continue Stage 2 and Stage 3 from the already-trained
+Stage 1 seed-2 checkpoint. Multi-seed Stage 1 replication remains set up for
+later paper replication.
 
 ## Requirements
 
-- Linux x86-64/iOS
+- Linux x86-64
 - Conda (Miniconda or Anaconda)
-- An NVIDIA GPU with a driver compatible with CUDA 11.7, pretty sure that latest CUDA 13.3 is backcompatible with 11.7 though
-- Enough disk space for the extracted bundle and Conda environment ~4Gb
+- An NVIDIA GPU and a driver compatible with the pinned CUDA 11.7 PyTorch build
+- At least 24 GB for both datasets, the Conda environment, and initial outputs
+- Git LFS (used for the trained checkpoint and bundled synthesizer binaries)
 
-## Setup and run
+## Priority 1: set up the environment and data
 
-### Dataset layout
-
-Expects:
-
-```text
-datasets/dexed/
-├── params.pt
-└── spectrogram/
-```
-so just copy the contents of the unzipped file data/dataset into skripsie-training/datasets/dexed.
-
-### Then
-From repo root:
+From the repository root:
 
 ```bash
 ./setup.sh
-./run.sh
 ```
-This should work, lmk if something fails.
 
+The datasets must have this layout:
 
+```text
+datasets/
+├── dexed/
+│   ├── params.pt
+│   └── spectrogram/
+└── surge/              # installed automatically before Stage 3
+    ├── wav/
+    └── spectrogram/
+```
 
-The first command creates the `synthrl-stage1` Conda environment. The second
-starts the configured 200-epoch training run. Outputs and checkpoints are saved
-under `run/stage1/seed2/`.
+Copy the extracted Dexed dataset into `datasets/dexed/`. The complete Surge
+dataset is a versioned GitHub Release asset; `./setup_data.sh` downloads it,
+verifies its SHA-256 checksum, and extracts it into `datasets/surge/`. Stage 3
+calls this script automatically and does not require `surgepy`.
 
-## Run the remaining Stage 1 seeds
+Stage 1 can read pre-rendered data without RenderMan. RL fine-tuning renders
+inferred Dexed presets, so the Linux x86-64 runtime binaries are included via
+Git LFS at:
 
-Seeds 1 and 3 can be trained consecutively with one command:
+```text
+third_party/RenderMan/Builds/LinuxMakefile/build/librenderman.so
+third_party/Dexed/Builds/Linux/build/Dexed.so
+```
+
+Their licenses and pinned corresponding-source links are in
+`third_party/README.md`. If these builds are incompatible with the target
+machine, build replacements and set both paths before fine-tuning:
+
+```bash
+export SYNTHRL_RENDERMAN_BUILD_DIR=/absolute/path/to/RenderMan/Builds/LinuxMakefile/build
+export SYNTHRL_DEXED_PLUGIN_PATH=/absolute/path/to/Dexed.so
+```
+
+## Priority 2: run Stage 2 from trained seed 2
+
+The tracked checkpoint must exist at
+`run/stage1/seed2/checkpoints/00199.tar`. Then run:
+
+```bash
+./run_stage2.sh
+```
+
+Stage 2 loads Stage 1 epoch 199, uses seed 2, and writes to
+`run/stage2/seed2/`. A one-epoch smoke test that uses a separate output is:
+
+```bash
+./run_stage2.sh run_name=smoke/stage2-seed2 train.end_epoch=200 loss.synth_render_workers=2
+```
+
+Hydra overrides can be appended to any command, for example
+`train.save_period=10` or `loss.synth_render_workers=8`.
+
+## Priority 3: run Stage 3 from Stage 2 seed 2
+
+After Stage 2 finishes, its checkpoint must exist at
+`run/stage2/seed2/checkpoints/00399.tar`. Then run:
+
+```bash
+./run_stage3.sh
+```
+
+Stage 3 loads that checkpoint, keeps seed 2, trains on the Surge dataset, and
+writes to `run/stage3/seed2/`. On first use it downloads the approximately
+1.5 GB compressed dataset release. A one-epoch smoke test is:
+
+```bash
+./run_stage3.sh run_name=smoke/stage3-seed2 train.end_epoch=400 loss.synth_render_workers=2
+```
+
+Keep the complete `run/` directory when moving between machines because each
+stage reads the preceding stage's saved configuration and checkpoint.
+
+## Later priority: replicate Stage 1 across seeds
+
+The existing seed multiplication is retained for the later full paper
+replication. Train seeds 1 and 3 consecutively with:
 
 ```bash
 ./run_stage1_seeds.sh
 ```
 
-The runs use independent RNG seeds and save to `run/stage1/seed1/` and
-`run/stage1/seed3/`, respectively. Seed 3 starts only after seed 1 completes
-successfully. Any Hydra overrides are applied to both runs:
+They write to `run/stage1/seed1/` and `run/stage1/seed3/`. Seed 3 starts
+only after seed 1 succeeds. Overrides apply to both runs:
 
 ```bash
 ./run_stage1_seeds.sh train.minibatch_size=16 train.num_workers=4
 ```
 
-To run either seed on its own:
+To run either seed separately:
 
 ```bash
 ./run.sh seed=1 run_name=stage1/seed1
 ./run.sh seed=3 run_name=stage1/seed3
 ```
 
-To do a one-epoch hardware benchmark first:
+## Stage 1 and checkpoint maintenance
 
-```bash
-./run.sh train.end_epoch=1
-```
-
-To override configuration values, append Hydra arguments. For example:
-
-```bash
-./run.sh train.minibatch_size=16 train.num_workers=4 train.save_period=2
-```
-
-## Resume from a checkpoint
-
-Checkpoints are written every five epochs. To resume at epoch 50, ensure
-`run/stage1/seed2/checkpoints/00050.tar` exists, then run:
+The default Stage 1 command remains `./run.sh`; it trains seed 2 for 200
+epochs and writes to `run/stage1/seed2/`. To resume from epoch 50:
 
 ```bash
 ./run.sh train.start_epoch=50
 ```
 
-Keep the `run/` folder when moving between machines or notebook sessions.
-
-## Transfer the trained model
-
-After the default training run finishes, push the final checkpoint with Git
-LFS (install Git LFS first if it is not already available):
+To transfer the final checkpoint with Git LFS:
 
 ```bash
 git lfs install
@@ -97,24 +137,29 @@ git commit -m "Add trained Stage 1 model"
 git push
 ```
 
-The recipient can then run `git pull` with Git LFS installed. The trained model
-will be at `run/stage1/seed2/checkpoints/00199.tar`.
+## Publishing the data asset
 
+The downloader expects a release tagged `data-v1` with an asset named
+`surge-dataset-v1.tar.gz`. The prepared archive has this SHA-256 checksum:
 
+```text
+fb6d0e75513a9969975fda6543aa1baee5a74e59bf90d597683dcc6076d1098d
+```
 
-Parameter metadata is stored in `synth/dexed_presets.sqlite`.
+After installing and authenticating GitHub CLI, publish it from the machine
+where the archive was prepared:
 
-## Kaggle or another managed GPU image
-
-Managed notebook images often already provide a newer CUDA-enabled PyTorch.
-Creating this pinned environment is the most reproducible route, but first
-confirm that the platform has enough writable disk space for both the dataset
-and environment. Run `./run.sh train.end_epoch=1` before committing to the full
-run.
+```bash
+gh release create data-v1 /tmp/surge-dataset-v1.tar.gz \
+  --title "SynthRL Surge dataset v1" \
+  --notes "Pre-rendered Surge waveforms and spectrograms for Stage 3 training."
+```
 
 ## Troubleshooting
 
-- CUDA out of memory: lower `train.minibatch_size` from 32 to 16 or 8.
+- CUDA out of memory: lower `train.minibatch_size` to 16 or 8.
 - Data-loader errors: set `train.num_workers=0`.
-- Existing environment: remove it with `conda env remove -n synthrl-stage1`,
-  then rerun `./setup.sh`.
+- Render errors: reduce `loss.synth_render_workers`, verify both renderer
+  paths, and check `DISPLAY`/Xvfb availability.
+- Existing environment: remove it with
+  `conda env remove -n synthrl-stage1`, then rerun `./setup.sh`.

@@ -2,7 +2,7 @@
 *.csv
 *.pt
 data_test/
-data/
+datasets/surge/
 
 surge
 

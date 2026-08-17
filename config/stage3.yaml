@@ -1,0 +1,46 @@
+defaults:
+  - model: SynthRL
+  - dataset: surge
+  - _self_
+
+train:
+  current_k_fold: 0
+  k_folds: 5
+  test_holdout_proportion: 0.2
+  minibatch_size: 32
+  num_workers: 2
+  start_epoch: 399
+  end_epoch: 600
+  save_period: 50
+  eval_period: 10
+
+loss:
+  param: false
+  cat_softmax_t: 0.2
+  label_smoothing: true
+  per: true
+  per_capacity: 5
+  rl: true
+  synth_render_workers: 16
+  rl_coef:
+    s_value: 0.0
+    e_value: 1.0
+    s_epoch: 199
+    e_epoch: 299
+
+optim:
+  initial_lr: 0.00002
+  weight_decay: 0.0001
+  betas: [0.9, 0.999]
+
+scheduler:
+  warmup_epochs: 10
+  warmup_start_factor: 0.2
+
+logs_root_dir: run
+run_name: stage3/seed2
+source_run_name: stage2/seed2
+synth_name: dexed
+seed: 2
+verbosity: 1
+main_cuda_device_idx: 0

@@ -24,9 +24,15 @@ import pandas as pd
 import pathlib
 #import pkgutil
 
-SYNTHRL_ROOT = pathlib.Path(__file__).resolve().parents[2]
-RENDERMAN_BUILD_DIR = SYNTHRL_ROOT / "RenderMan" / "Builds" / "LinuxMakefile" / "build"
-DEXED_PLUGIN_PATH = SYNTHRL_ROOT / "Dexed" / "Builds" / "Linux" / "build" / "Dexed.so"
+SYNTHRL_ROOT = pathlib.Path(__file__).resolve().parents[1]
+RENDERMAN_BUILD_DIR = pathlib.Path(os.environ.get(
+    "SYNTHRL_RENDERMAN_BUILD_DIR",
+    SYNTHRL_ROOT / "third_party" / "RenderMan" / "Builds" / "LinuxMakefile" / "build",
+))
+DEXED_PLUGIN_PATH = pathlib.Path(os.environ.get(
+    "SYNTHRL_DEXED_PLUGIN_PATH",
+    SYNTHRL_ROOT / "third_party" / "Dexed" / "Builds" / "Linux" / "build" / "Dexed.so",
+))
 
 sys.path.insert(0, str(RENDERMAN_BUILD_DIR))
 try:
